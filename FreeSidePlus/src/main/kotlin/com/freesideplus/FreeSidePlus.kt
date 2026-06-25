@@ -34,6 +34,22 @@ class FreeSidePlus : MainAPI() {
 
     private val apiBase = "$mainUrl/wp-json/wp/v2"
 
+    private val cache = mutableMapOf<String, Pair<Long, Any>>()
+    private val LIST_CACHE_TTL = 5 * 60 * 1000L
+    private val POST_CACHE_TTL = 10 * 60 * 1000L
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun fetchPosts(url: String, ttl: Long = LIST_CACHE_TTL): List<WpPost> {
+        val now = System.currentTimeMillis()
+        cache[url]?.let { (expiry, data) ->
+            if (now < expiry) return data as List<WpPost>
+        }
+        val json = app.get(url).text
+        val posts = try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList<WpPost>() }
+        cache[url] = now + ttl to posts
+        return posts
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class WpCategory(
         val id: Long,
@@ -84,8 +100,7 @@ class FreeSidePlus : MainAPI() {
         val homeLists = mutableListOf<HomePageList>()
 
         val latestDeferred = async {
-            val json = app.get("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc").text
-            try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+            fetchPosts("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc")
         }
 
         val categoryOrder = listOf(
@@ -99,11 +114,7 @@ class FreeSidePlus : MainAPI() {
         )
 
         val categoryDeferreds = categoryOrder.map { (id, name) ->
-            async {
-                val json = app.get("$apiBase/posts?categories=$id&per_page=15&_embed&orderby=date&order=desc").text
-                val posts = try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
-                name to posts
-            }
+            async { name to fetchPosts("$apiBase/posts?categories=$id&per_page=15&_embed&orderby=date&order=desc") }
         }
 
         val latestPosts = latestDeferred.await()
@@ -125,9 +136,7 @@ class FreeSidePlus : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-        val postsJson = app.get("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance").text
-        val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
-        posts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
+        fetchPosts("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance").map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
     }
 
     private suspend fun WpPost.toSearchResponse(): SearchResponse? {
@@ -150,8 +159,7 @@ class FreeSidePlus : MainAPI() {
         } catch (_: Exception) {
             url.removePrefix("$mainUrl/").removeSuffix("/").substringBefore("/")
         }
-        val postsJson = app.get("$apiBase/posts?slug=$slug&_embed").text
-        val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+        val posts = fetchPosts("$apiBase/posts?slug=$slug&_embed", POST_CACHE_TTL)
         val post = posts.firstOrNull() ?: throw Exception("Post not found")
 
         val title = Jsoup.parse(post.title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: "Unknown"
