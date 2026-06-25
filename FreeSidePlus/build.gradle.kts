@@ -9,6 +9,7 @@ cloudstream {
         "Movie",
         "TvSeries",
     )
+    iconUrl = "https://www.free-sideplus.com/wp-content/uploads/2026/03/ontario-logo-dark-mode-2.webp"
     isCrossPlatform = false
 }
 
