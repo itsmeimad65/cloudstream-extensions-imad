@@ -48,8 +48,11 @@ jobs:
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
           ./gradlew makePluginsJson
-          find . -name "*.cs3" -exec cp {} $GITHUB_WORKSPACE/builds \;
-          cp build/plugins.json $GITHUB_WORKSPACE/builds
+          echo "=== Copying artifacts ==="
+          find . -name "*.cs3" -exec echo "Found: {}" \; -exec cp {} $GITHUB_WORKSPACE/builds \;
+          cp -v build/plugins.json $GITHUB_WORKSPACE/builds
+          echo "=== Builds dir contents ==="
+          ls -la $GITHUB_WORKSPACE/builds/
 
       - name: Push builds
         run: |
@@ -57,5 +60,9 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add .
-          git commit --amend -m "Build $GITHUB_SHA" || exit 0
-          git push --force
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Build $GITHUB_SHA"
+            git push origin HEAD:builds --force
+          fi
