@@ -2,6 +2,7 @@ package com.freesideplus
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.type.TypeReference
 import com.lagradost.cloudstream3.HomePageList
 import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.LoadResponse
@@ -78,11 +79,11 @@ class FreeSidePlus : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val categoriesJson = app.get("$apiBase/categories?exclude=1&per_page=20&orderby=count&order=desc").text
-        val categories = try { mapper.readValue<List<WpCategory>>(categoriesJson) } catch (_: Exception) { emptyList() }
+        val categories = try { mapper.readValue(categoriesJson, object : TypeReference<List<WpCategory>>() {}) } catch (_: Exception) { emptyList() }
 
         val homeLists = categories.filter { it.count > 0 }.map { cat ->
             val postsJson = app.get("$apiBase/posts?categories=${cat.id}&per_page=15&_embed&orderby=date&order=desc").text
-            val posts = try { mapper.readValue<List<WpPost>>(postsJson) } catch (_: Exception) { emptyList() }
+            val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
 
             HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() })
         }
@@ -93,7 +94,7 @@ class FreeSidePlus : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
         val postsJson = app.get("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance").text
-        val posts = try { mapper.readValue<List<WpPost>>(postsJson) } catch (_: Exception) { emptyList() }
+        val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
         return posts.mapNotNull { it.toSearchResponse() }
     }
 
@@ -112,7 +113,7 @@ class FreeSidePlus : MainAPI() {
             url.removePrefix("$mainUrl/").removeSuffix("/").substringBefore("/")
         }
         val postsJson = app.get("$apiBase/posts?slug=$slug&_embed").text
-        val posts = try { mapper.readValue<List<WpPost>>(postsJson) } catch (_: Exception) { emptyList() }
+        val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
         val post = posts.firstOrNull() ?: throw Exception("Post not found")
 
         val title = post.title?.rendered?.trim() ?: "Unknown"

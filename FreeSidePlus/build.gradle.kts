@@ -9,7 +9,6 @@ cloudstream {
         "Movie",
         "TvSeries",
     )
-    iconUrl = "https://www.free-sideplus.com/favicon.ico"
     isCrossPlatform = false
 }
 
