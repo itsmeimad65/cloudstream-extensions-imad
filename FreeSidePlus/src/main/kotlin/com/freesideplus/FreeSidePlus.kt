@@ -34,20 +34,13 @@ class FreeSidePlus : MainAPI() {
 
     private val apiBase = "$mainUrl/wp-json/wp/v2"
 
-    private val cache = mutableMapOf<String, Pair<Long, Any>>()
-    private val LIST_CACHE_TTL = 5 * 60 * 1000L
-    private val POST_CACHE_TTL = 10 * 60 * 1000L
-
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun fetchPosts(url: String, ttl: Long = LIST_CACHE_TTL): List<WpPost> {
-        val now = System.currentTimeMillis()
-        cache[url]?.let { (expiry, data) ->
-            if (now < expiry) return data as List<WpPost>
-        }
-        val json = app.get(url).text
-        val posts = try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList<WpPost>() }
-        cache[url] = now + ttl to posts
-        return posts
+    companion object {
+        private val postCache = mutableMapOf<String, Pair<Long, List<WpPost>>>()
+        private val posterCache = mutableMapOf<String, String>() // post id -> poster URL
+        private val srCache = mutableMapOf<String, Pair<Long, SearchResponse?>>() // post link -> search response
+        private const val LIST_TTL = 5 * 60 * 1000L
+        private const val POST_TTL = 10 * 60 * 1000L
+        private const val SR_TTL = 10 * 60 * 1000L
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -93,6 +86,68 @@ class FreeSidePlus : MainAPI() {
         val slug: String? = null
     )
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class WpMedia(
+        val id: Long,
+        @JsonProperty("source_url") val sourceUrl: String? = null
+    )
+
+    private suspend fun getCachedPosts(url: String, ttl: Long = LIST_TTL): List<WpPost> {
+        val now = System.currentTimeMillis()
+        synchronized(postCache) {
+            postCache[url]?.let { (expiry, posts) ->
+                if (now < expiry) return posts
+            }
+        }
+        val json = app.get(url).text
+        val posts = try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList<WpPost>() }
+        synchronized(postCache) { postCache[url] = now + ttl to posts }
+        return posts
+    }
+
+    private suspend fun getCachedMedia(mediaIds: Set<Long>): Map<Long, String> {
+        if (mediaIds.isEmpty()) return emptyMap()
+        val ids = mediaIds.filter { it !in posterCache }
+        if (ids.isNotEmpty()) {
+            try {
+                val json = app.get("$apiBase/media?include=${ids.joinToString(",")}&per_page=100&_fields=id,source_url").text
+                val mediaList = try { mapper.readValue(json, object : TypeReference<List<WpMedia>>() {}) } catch (_: Exception) { emptyList<WpMedia>() }
+                mediaList.forEach { if (it.sourceUrl != null) posterCache[it.id.toString()] = it.sourceUrl }
+            } catch (_: Exception) { }
+        }
+        return mediaIds.mapNotNull { id ->
+            posterCache[id.toString()]?.let { id to it }
+        }.toMap()
+    }
+
+    private suspend fun getPosterUrl(post: WpPost): String? {
+        if (post.featuredMedia == 0L) return null
+        val fromEmbed = post._embedded?.featuredMedia?.firstOrNull()?.sourceUrl
+        if (fromEmbed != null) return fromEmbed
+        val cached = posterCache[post.featuredMedia.toString()]
+        if (cached != null) return cached
+        val fromOg = try {
+            val doc = app.get(post.link).document
+            doc.selectFirst("meta[property=og:image]")?.attr("content")
+        } catch (_: Exception) { null }
+        if (fromOg != null) posterCache[post.featuredMedia.toString()] = fromOg
+        return fromOg
+    }
+
+    private suspend fun WpPost.toSearchResponseFromPost(): SearchResponse? {
+        val linkKey = link
+        synchronized(srCache) {
+            srCache[linkKey]?.let { (expiry, sr) ->
+                if (System.currentTimeMillis() < expiry) return sr
+            }
+        }
+        val title = Jsoup.parse(title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: return null
+        val posterUrl = getPosterUrl(this)
+        val sr = newMovieSearchResponse(title, link, TvType.Movie) { this.posterUrl = posterUrl }
+        synchronized(srCache) { srCache[linkKey] = System.currentTimeMillis() + SR_TTL to sr }
+        return sr
+    }
+
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
@@ -100,7 +155,7 @@ class FreeSidePlus : MainAPI() {
         val homeLists = mutableListOf<HomePageList>()
 
         val latestDeferred = async {
-            fetchPosts("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc")
+            getCachedPosts("$apiBase/posts?per_page=30&orderby=date&order=desc")
         }
 
         val categoryOrder = listOf(
@@ -114,19 +169,25 @@ class FreeSidePlus : MainAPI() {
         )
 
         val categoryDeferreds = categoryOrder.map { (id, name) ->
-            async { name to fetchPosts("$apiBase/posts?categories=$id&per_page=15&_embed&orderby=date&order=desc") }
+            async { name to getCachedPosts("$apiBase/posts?categories=$id&per_page=15&orderby=date&order=desc") }
         }
 
         val latestPosts = latestDeferred.await()
+        val allResults = categoryDeferreds.map { it.await() }
+
+        val allMediaIds = (latestPosts + allResults.flatMap { it.second })
+            .mapNotNull { it.featuredMedia.takeIf { id -> id != 0L } }.toSet()
+
+        getCachedMedia(allMediaIds)
+
         if (latestPosts.isNotEmpty()) {
-            val items = latestPosts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
+            val items = latestPosts.map { async { it.toSearchResponseFromPost() } }.awaitAll().filterNotNull()
             homeLists.add(HomePageList("Latest", items, isHorizontalImages = true))
         }
 
-        for (d in categoryDeferreds) {
-            val (name, posts) = d.await()
+        for ((name, posts) in allResults) {
             if (posts.isNotEmpty()) {
-                val items = posts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
+                val items = posts.map { async { it.toSearchResponseFromPost() } }.awaitAll().filterNotNull()
                 homeLists.add(HomePageList(name, items, isHorizontalImages = true))
             }
         }
@@ -136,21 +197,10 @@ class FreeSidePlus : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-        fetchPosts("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance").map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
-    }
-
-    private suspend fun WpPost.toSearchResponse(): SearchResponse? {
-        val title = Jsoup.parse(title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: return null
-        var posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
-        if (posterUrl == null && featuredMedia != 0L) {
-            posterUrl = try {
-                val doc = app.get(link).document
-                doc.selectFirst("meta[property=og:image]")?.attr("content")
-            } catch (_: Exception) { null }
-        }
-        return newMovieSearchResponse(title, link, TvType.Movie) {
-            this.posterUrl = posterUrl
-        }
+        val posts = getCachedPosts("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance")
+        val mediaIds = posts.mapNotNull { it.featuredMedia.takeIf { id -> id != 0L } }.toSet()
+        getCachedMedia(mediaIds)
+        posts.map { async { it.toSearchResponseFromPost() } }.awaitAll().filterNotNull()
     }
 
     override suspend fun load(url: String): LoadResponse {
@@ -159,19 +209,13 @@ class FreeSidePlus : MainAPI() {
         } catch (_: Exception) {
             url.removePrefix("$mainUrl/").removeSuffix("/").substringBefore("/")
         }
-        val posts = fetchPosts("$apiBase/posts?slug=$slug&_embed", POST_CACHE_TTL)
+        val posts = getCachedPosts("$apiBase/posts?slug=$slug&_embed", POST_TTL)
         val post = posts.firstOrNull() ?: throw Exception("Post not found")
 
         val title = Jsoup.parse(post.title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: "Unknown"
         val excerptHtml = post.excerpt?.rendered ?: ""
         val plot = Jsoup.parse(excerptHtml).text().trim().takeIf { it.isNotBlank() }
-        var posterUrl = post._embedded?.featuredMedia?.firstOrNull()?.sourceUrl
-        if (posterUrl == null && post.featuredMedia != 0L) {
-            posterUrl = try {
-                val doc = app.get(post.link).document
-                doc.selectFirst("meta[property=og:image]")?.attr("content")
-            } catch (_: Exception) { null }
-        }
+        val posterUrl = getPosterUrl(post)
         val tags = post._embedded?.terms?.flatten()?.mapNotNull { it.name }?.takeIf { it.isNotEmpty() }
         val year = post.date?.substringBefore("-")?.toIntOrNull()
 
