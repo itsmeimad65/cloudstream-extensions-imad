@@ -107,7 +107,7 @@ class FreeSidePlus : MainAPI() {
 
     private suspend fun getCachedMedia(mediaIds: Set<Long>): Map<Long, String> {
         if (mediaIds.isEmpty()) return emptyMap()
-        val ids = mediaIds.filter { it !in posterCache }
+        val ids = mediaIds.filterNot { posterCache.containsKey(it.toString()) }
         if (ids.isNotEmpty()) {
             try {
                 val json = app.get("$apiBase/media?include=${ids.joinToString(",")}&per_page=100&_fields=id,source_url").text
