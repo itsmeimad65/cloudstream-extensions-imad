@@ -78,14 +78,23 @@ class FreeSidePlus : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+        val homeLists = mutableListOf<HomePageList>()
+
+        val latestJson = app.get("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc").text
+        val latestPosts = try { mapper.readValue(latestJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+        if (latestPosts.isNotEmpty()) {
+            homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }))
+        }
+
         val categoriesJson = app.get("$apiBase/categories?exclude=1&per_page=20&orderby=count&order=desc").text
         val categories = try { mapper.readValue(categoriesJson, object : TypeReference<List<WpCategory>>() {}) } catch (_: Exception) { emptyList() }
 
-        val homeLists = categories.filter { it.count > 0 }.map { cat ->
+        categories.filter { it.count > 0 }.forEach { cat ->
             val postsJson = app.get("$apiBase/posts?categories=${cat.id}&per_page=15&_embed&orderby=date&order=desc").text
             val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
-
-            HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() })
+            if (posts.isNotEmpty()) {
+                homeLists.add(HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() }))
+            }
         }
 
         return newHomePageResponse(homeLists)
@@ -103,6 +112,7 @@ class FreeSidePlus : MainAPI() {
         val posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
         return newMovieSearchResponse(title, link, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.posterVertical = false
         }
     }
 
