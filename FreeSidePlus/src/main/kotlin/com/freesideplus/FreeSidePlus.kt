@@ -112,7 +112,6 @@ class FreeSidePlus : MainAPI() {
         val posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
         return newMovieSearchResponse(title, link, TvType.Movie) {
             this.posterUrl = posterUrl
-            this.posterVertical = false
         }
     }
 
