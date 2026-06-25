@@ -9,7 +9,7 @@
             "imad"
         ],
         "description": "Free Side+ content - Sidecast, BTS, Side+ Saturdays, Inside, 1v100",
-        "fileSize": 24574,
+        "fileSize": 27390,
         "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
         "language": "en",
         "tvTypes": [
@@ -18,6 +18,6 @@
         ],
         "iconUrl": "https://www.free-sideplus.com/wp-content/uploads/2026/03/ontario-logo-dark-mode-2.webp",
         "apiVersion": 1,
-        "fileHash": "sha256-7d9a60ccdc30c2d20928a8405ac150eacf026de377bdfe20f4d3c7bc6e7298bc"
+        "fileHash": "sha256-41139d6188077cb2c482d972d9cfe1379908f1cf43929d4eac564b456ad4f813"
     }
 ]
