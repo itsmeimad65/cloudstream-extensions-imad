@@ -19,6 +19,7 @@ import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.jsoup.Jsoup
 import java.net.URL
@@ -107,29 +108,37 @@ class FreeSidePlus : MainAPI() {
 
         val latestPosts = latestDeferred.await()
         if (latestPosts.isNotEmpty()) {
-            homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
+            val items = latestPosts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
+            homeLists.add(HomePageList("Latest", items, isHorizontalImages = true))
         }
 
         for (d in categoryDeferreds) {
             val (name, posts) = d.await()
             if (posts.isNotEmpty()) {
-                homeLists.add(HomePageList(name, posts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
+                val items = posts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
+                homeLists.add(HomePageList(name, items, isHorizontalImages = true))
             }
         }
 
         newHomePageResponse(homeLists)
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
+    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
         val postsJson = app.get("$apiBase/posts?search=$encodedQuery&_embed&per_page=50&orderby=relevance").text
         val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
-        return posts.mapNotNull { it.toSearchResponse() }
+        posts.map { async { it.toSearchResponse() } }.awaitAll().filterNotNull()
     }
 
-    private fun WpPost.toSearchResponse(): SearchResponse? {
+    private suspend fun WpPost.toSearchResponse(): SearchResponse? {
         val title = Jsoup.parse(title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: return null
-        val posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
+        var posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
+        if (posterUrl == null && featuredMedia != 0L) {
+            posterUrl = try {
+                val doc = app.get(link).document
+                doc.selectFirst("meta[property=og:image]")?.attr("content")
+            } catch (_: Exception) { null }
+        }
         return newMovieSearchResponse(title, link, TvType.Movie) {
             this.posterUrl = posterUrl
         }
@@ -148,7 +157,13 @@ class FreeSidePlus : MainAPI() {
         val title = Jsoup.parse(post.title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: "Unknown"
         val excerptHtml = post.excerpt?.rendered ?: ""
         val plot = Jsoup.parse(excerptHtml).text().trim().takeIf { it.isNotBlank() }
-        val posterUrl = post._embedded?.featuredMedia?.firstOrNull()?.sourceUrl
+        var posterUrl = post._embedded?.featuredMedia?.firstOrNull()?.sourceUrl
+        if (posterUrl == null && post.featuredMedia != 0L) {
+            posterUrl = try {
+                val doc = app.get(post.link).document
+                doc.selectFirst("meta[property=og:image]")?.attr("content")
+            } catch (_: Exception) { null }
+        }
         val tags = post._embedded?.terms?.flatten()?.mapNotNull { it.name }?.takeIf { it.isNotEmpty() }
         val year = post.date?.substringBefore("-")?.toIntOrNull()
 
