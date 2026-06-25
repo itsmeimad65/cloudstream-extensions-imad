@@ -139,7 +139,8 @@ class FreeSidePlus : MainAPI() {
         val tabs = doc.select("div.justabutton-tab[data-payload]")
 
         for (tab in tabs) {
-            val payload = tab.attr("data-payload") ?: continue
+            val payload = tab.attr("data-payload")
+            if (payload.isBlank()) continue
             val decoded = try {
                 String(java.util.Base64.getDecoder().decode(payload))
             } catch (_: Exception) {
