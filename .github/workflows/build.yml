@@ -51,6 +51,7 @@ jobs:
           echo "=== Copying artifacts ==="
           find . -name "*.cs3" -exec echo "Found: {}" \; -exec cp {} $GITHUB_WORKSPACE/builds \;
           cp -v build/plugins.json $GITHUB_WORKSPACE/builds
+          cp -v repo.json $GITHUB_WORKSPACE/builds/
           echo "=== Builds dir contents ==="
           ls -la $GITHUB_WORKSPACE/builds/
 
