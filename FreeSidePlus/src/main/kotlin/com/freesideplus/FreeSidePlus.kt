@@ -152,11 +152,4 @@ class FreeSidePlus : MainAPI() {
         return true
     }
 
-    companion object {
-        private val episodeRegex = Regex("""(?i)(?:Episode|Ep)\s*(\d+)""")
-
-        fun extractEpisodeNumber(title: String): Int? {
-            return episodeRegex.find(title)?.groupValues?.get(1)?.toIntOrNull()
-        }
-    }
 }
