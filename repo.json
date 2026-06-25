@@ -1,0 +1,7 @@
+{
+  "name": "cloudstream-extensions-imad",
+  "description": "CloudStream extensions by imad",
+  "manifestUrl": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/plugins.json",
+  "iconUrl": "https://www.free-sideplus.com/favicon.ico",
+  "version": 1
+}
