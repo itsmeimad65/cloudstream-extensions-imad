@@ -18,6 +18,8 @@ import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.jsoup.Jsoup
 import java.net.URL
 
@@ -77,27 +79,45 @@ class FreeSidePlus : MainAPI() {
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
-    ): HomePageResponse {
+    ): HomePageResponse = coroutineScope {
         val homeLists = mutableListOf<HomePageList>()
 
-        val latestJson = app.get("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc").text
-        val latestPosts = try { mapper.readValue(latestJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+        val latestDeferred = async {
+            val json = app.get("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc").text
+            try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+        }
+
+        val categoryOrder = listOf(
+            41L to "Sidecast",
+            43L to "Side+ Saturdays",
+            42L to "BTS",
+            44L to "Inside",
+            53L to "Inside Out",
+            32L to "1v100",
+            1L to "Uncategorized",
+        )
+
+        val categoryDeferreds = categoryOrder.map { (id, name) ->
+            async {
+                val json = app.get("$apiBase/posts?categories=$id&per_page=15&_embed&orderby=date&order=desc").text
+                val posts = try { mapper.readValue(json, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+                name to posts
+            }
+        }
+
+        val latestPosts = latestDeferred.await()
         if (latestPosts.isNotEmpty()) {
             homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
         }
 
-        val categoriesJson = app.get("$apiBase/categories?per_page=20&orderby=count&order=desc").text
-        val categories = try { mapper.readValue(categoriesJson, object : TypeReference<List<WpCategory>>() {}) } catch (_: Exception) { emptyList() }
-
-        categories.filter { it.count > 0 }.forEach { cat ->
-            val postsJson = app.get("$apiBase/posts?categories=${cat.id}&per_page=15&_embed&orderby=date&order=desc").text
-            val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
+        for (d in categoryDeferreds) {
+            val (name, posts) = d.await()
             if (posts.isNotEmpty()) {
-                homeLists.add(HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
+                homeLists.add(HomePageList(name, posts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
             }
         }
 
-        return newHomePageResponse(homeLists)
+        newHomePageResponse(homeLists)
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
@@ -108,7 +128,7 @@ class FreeSidePlus : MainAPI() {
     }
 
     private fun WpPost.toSearchResponse(): SearchResponse? {
-        val title = title?.rendered?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val title = Jsoup.parse(title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: return null
         val posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
         return newMovieSearchResponse(title, link, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -125,7 +145,7 @@ class FreeSidePlus : MainAPI() {
         val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
         val post = posts.firstOrNull() ?: throw Exception("Post not found")
 
-        val title = post.title?.rendered?.trim() ?: "Unknown"
+        val title = Jsoup.parse(post.title?.rendered?.trim() ?: "").text().takeIf { it.isNotBlank() } ?: "Unknown"
         val excerptHtml = post.excerpt?.rendered ?: ""
         val plot = Jsoup.parse(excerptHtml).text().trim().takeIf { it.isNotBlank() }
         val posterUrl = post._embedded?.featuredMedia?.firstOrNull()?.sourceUrl
