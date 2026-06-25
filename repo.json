@@ -1,7 +1,9 @@
 {
-  "name": "cloudstream-extensions-imad",
-  "description": "CloudStream extensions by imad",
-  "manifestUrl": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/plugins.json",
+  "name": "Imad Repo",
   "iconUrl": "https://www.free-sideplus.com/favicon.ico",
-  "version": 1
+  "description": "Imad Repository",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/refs/heads/builds/plugins.json"
+  ]
 }
