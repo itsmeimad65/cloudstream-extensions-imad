@@ -86,7 +86,7 @@ class FreeSidePlus : MainAPI() {
             homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
         }
 
-        val categoriesJson = app.get("$apiBase/categories?exclude=1&per_page=20&orderby=count&order=desc").text
+        val categoriesJson = app.get("$apiBase/categories?per_page=20&orderby=count&order=desc").text
         val categories = try { mapper.readValue(categoriesJson, object : TypeReference<List<WpCategory>>() {}) } catch (_: Exception) { emptyList() }
 
         categories.filter { it.count > 0 }.forEach { cat ->
