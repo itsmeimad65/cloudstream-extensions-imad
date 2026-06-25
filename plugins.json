@@ -1,0 +1,23 @@
+[
+    {
+        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/FreeSidePlus.cs3",
+        "status": 1,
+        "version": 1,
+        "name": "FreeSidePlus",
+        "internalName": "FreeSidePlus",
+        "authors": [
+            "imad"
+        ],
+        "description": "Free Side+ content - Sidecast, BTS, Side+ Saturdays, Inside, 1v100",
+        "fileSize": 22987,
+        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
+        "language": "en",
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "iconUrl": "https://www.free-sideplus.com/favicon.ico",
+        "apiVersion": 1,
+        "fileHash": "sha256-7bb3bdfdb786aa6c5c6e41e55bd26280b35625326fd0119621dc0127c8b9f930"
+    }
+]
