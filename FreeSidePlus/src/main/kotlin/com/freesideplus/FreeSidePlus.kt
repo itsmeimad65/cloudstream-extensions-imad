@@ -83,7 +83,7 @@ class FreeSidePlus : MainAPI() {
         val latestJson = app.get("$apiBase/posts?per_page=30&_embed&orderby=date&order=desc").text
         val latestPosts = try { mapper.readValue(latestJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
         if (latestPosts.isNotEmpty()) {
-            homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }))
+            homeLists.add(HomePageList("Latest", latestPosts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
         }
 
         val categoriesJson = app.get("$apiBase/categories?exclude=1&per_page=20&orderby=count&order=desc").text
@@ -93,7 +93,7 @@ class FreeSidePlus : MainAPI() {
             val postsJson = app.get("$apiBase/posts?categories=${cat.id}&per_page=15&_embed&orderby=date&order=desc").text
             val posts = try { mapper.readValue(postsJson, object : TypeReference<List<WpPost>>() {}) } catch (_: Exception) { emptyList() }
             if (posts.isNotEmpty()) {
-                homeLists.add(HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() }))
+                homeLists.add(HomePageList(cat.name, posts.mapNotNull { it.toSearchResponse() }, isHorizontalImages = true))
             }
         }
 
