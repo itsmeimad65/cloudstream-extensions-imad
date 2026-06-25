@@ -4,7 +4,9 @@ import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
+import com.lagradost.cloudstream3.utils.newExtractorLink
 
 class FreeSidePlusExtractor : ExtractorApi() {
     override val name = "FreeSidePlus"
@@ -66,27 +68,27 @@ class FreeSidePlusExtractor : ExtractorApi() {
         val videoUrl = streamResp.url
         if (videoUrl.isNotBlank() && videoUrl != streamUrl) {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     source = "FreeSidePlus CDN",
                     name = "FreeSidePlus",
-                    url = videoUrl,
-                    referer = cdnPage,
-                    quality = ExtractorLink.Quality.EIGHT_K.value,
-                    isM3u8 = false
-                )
+                    url = videoUrl
+                ) {
+                    this.referer = cdnPage
+                    this.quality = Qualities.Unknown.value
+                }
             )
         } else {
             val body = streamResp.text
             if (body.isNotBlank() && body.startsWith("http")) {
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         source = "FreeSidePlus CDN",
                         name = "FreeSidePlus",
-                        url = body.trim(),
-                        referer = cdnPage,
-                        quality = ExtractorLink.Quality.EIGHT_K.value,
-                        isM3u8 = false
-                    )
+                        url = body.trim()
+                    ) {
+                        this.referer = cdnPage
+                        this.quality = Qualities.Unknown.value
+                    }
                 )
             }
         }

@@ -99,12 +99,8 @@ class FreeSidePlus : MainAPI() {
     private fun WpPost.toSearchResponse(): SearchResponse? {
         val title = title?.rendered?.trim()?.takeIf { it.isNotBlank() } ?: return null
         val posterUrl = _embedded?.featuredMedia?.firstOrNull()?.sourceUrl
-        val episodeNum = extractEpisodeNumber(title)
         return newMovieSearchResponse(title, link, TvType.Movie) {
             this.posterUrl = posterUrl
-            if (episodeNum != null) {
-                this.episode = episodeNum
-            }
         }
     }
 
