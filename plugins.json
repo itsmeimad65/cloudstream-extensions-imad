@@ -9,15 +9,14 @@
             "imad"
         ],
         "description": "Free Side+ content - Sidecast, BTS, Side+ Saturdays, Inside, 1v100",
-        "fileSize": 22987,
+        "fileSize": 23190,
         "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
         "language": "en",
         "tvTypes": [
             "Movie",
             "TvSeries"
         ],
-        "iconUrl": "https://www.free-sideplus.com/favicon.ico",
         "apiVersion": 1,
-        "fileHash": "sha256-7bb3bdfdb786aa6c5c6e41e55bd26280b35625326fd0119621dc0127c8b9f930"
+        "fileHash": "sha256-f181023e710a073551fc00a3f2fdadacc7d8a4b5c0db12d3b567191db6b37888"
     }
 ]
