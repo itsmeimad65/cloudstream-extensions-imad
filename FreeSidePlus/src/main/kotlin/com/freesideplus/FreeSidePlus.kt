@@ -155,7 +155,7 @@ class FreeSidePlus : MainAPI() {
         val homeLists = mutableListOf<HomePageList>()
 
         val latestDeferred = async {
-            getCachedPosts("$apiBase/posts?per_page=30&orderby=date&order=desc")
+            getCachedPosts("$apiBase/posts?per_page=30&orderby=date&order=desc&page=$page")
         }
 
         val categoryOrder = listOf(
@@ -169,7 +169,7 @@ class FreeSidePlus : MainAPI() {
         )
 
         val categoryDeferreds = categoryOrder.map { (id, name) ->
-            async { name to getCachedPosts("$apiBase/posts?categories=$id&per_page=15&orderby=date&order=desc") }
+            async { name to getCachedPosts("$apiBase/posts?categories=$id&per_page=15&orderby=date&order=desc&page=$page") }
         }
 
         val latestPosts = latestDeferred.await()
