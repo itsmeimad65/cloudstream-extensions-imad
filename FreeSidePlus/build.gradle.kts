@@ -1,4 +1,4 @@
-version = 1
+version = 2
 
 cloudstream {
     description = "Free Side+ content - Sidecast, BTS, Side+ Saturdays, Inside, 1v100"
