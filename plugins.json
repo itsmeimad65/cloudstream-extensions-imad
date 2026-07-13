@@ -1,0 +1,43 @@
+[
+    {
+        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/FreeSidePlus.cs3",
+        "status": 1,
+        "version": 1,
+        "name": "FreeSidePlus",
+        "internalName": "FreeSidePlus",
+        "authors": [
+            "imad"
+        ],
+        "description": "Free Side+ content - Sidecast, BTS, Side+ Saturdays, Inside, 1v100",
+        "fileSize": 32258,
+        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
+        "language": "en",
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "iconUrl": "https://www.free-sideplus.com/wp-content/uploads/2026/03/ontario-logo-dark-mode-2.webp",
+        "apiVersion": 1,
+        "fileHash": "sha256-c4b5021585f4e41916e13a01c6945a4fb1056a1c47ea73fbdf76817d95cca952"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/OnlyFan421.cs3",
+        "status": 1,
+        "version": 1,
+        "name": "OnlyFan421",
+        "internalName": "OnlyFan421",
+        "authors": [
+            "imad"
+        ],
+        "description": "Watch the latest OnlyFans leaks and studio releases",
+        "fileSize": 11521,
+        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
+        "language": "en",
+        "tvTypes": [
+            "NSFW"
+        ],
+        "iconUrl": "https://rentry.org/favicon.ico",
+        "apiVersion": 1,
+        "fileHash": "sha256-3f0f6fbf3f7049ea9851b2fb582b964dcabf8e08594909197b38ba9d12be1f73"
+    }
+]

@@ -1,0 +1,9 @@
+{
+  "name": "Imad Repo",
+  "iconUrl": "https://images.weserv.nl/?url=avatars.githubusercontent.com/u/273886491&mask=circle",
+  "description": "Imad Repository",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/refs/heads/builds/plugins.json"
+  ]
+}
