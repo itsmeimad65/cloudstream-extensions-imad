@@ -1,0 +1,84 @@
+name: Build
+
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '*.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          path: "src"
+
+      - name: Checkout builds
+        id: checkout-builds
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          ref: "builds"
+          path: "builds"
+
+      - name: Init builds branch
+        if: steps.checkout-builds.outcome == 'failure'
+        run: |
+          cd $GITHUB_WORKSPACE/builds
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" 2>/dev/null || \
+            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git checkout --orphan builds
+
+      - name: Clean old builds
+        run: |
+          rm $GITHUB_WORKSPACE/builds/*.cs3 || true
+          rm $GITHUB_WORKSPACE/builds/*.jar || true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: false
+
+      - name: Build Plugins
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          chmod +x gradlew
+          ./gradlew makePluginsJson
+          echo "=== Copying artifacts ==="
+          find . -name "*.cs3" -exec echo "Found: {}" \; -exec cp {} $GITHUB_WORKSPACE/builds \;
+          cp -v build/plugins.json $GITHUB_WORKSPACE/builds
+          cp -v repo.json $GITHUB_WORKSPACE/builds/
+          echo "=== Builds dir contents ==="
+          ls -la $GITHUB_WORKSPACE/builds/
+
+      - name: Push builds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd $GITHUB_WORKSPACE/builds
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Build $GITHUB_SHA"
+            git push origin HEAD:builds --force
+          fi
