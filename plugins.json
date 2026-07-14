@@ -43,14 +43,14 @@
     {
         "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/Reddxxx.cs3",
         "status": 1,
-        "version": 2,
+        "version": 3,
         "name": "Reddxxx",
         "internalName": "Reddxxx",
         "authors": [
             "imad"
         ],
         "description": "Browse millions of NSFW pics, gifs, and videos from Reddit",
-        "fileSize": 14214,
+        "fileSize": 16713,
         "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
         "language": "en",
         "tvTypes": [
@@ -58,6 +58,6 @@
         ],
         "iconUrl": "https://reddxxx.com/favicon.ico",
         "apiVersion": 1,
-        "fileHash": "sha256-46177b80c9c2724820b0039b016d4c8267294bfbc6d57893dbe0e3a930e8387e"
+        "fileHash": "sha256-4b894f98ef06a3d0f872238eab15e5c4314c3a2f0dbd05b63cc5dc9994b63753"
     }
 ]
