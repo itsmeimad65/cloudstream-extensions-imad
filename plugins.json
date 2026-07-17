@@ -9,7 +9,7 @@
             "imad"
         ],
         "description": "Browse and watch archived webcam videos from Archivebate",
-        "fileSize": 23250,
+        "fileSize": 23165,
         "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
         "language": "en",
         "tvTypes": [
@@ -17,7 +17,7 @@
         ],
         "iconUrl": "https://archivebate.com/logo/app.ico",
         "apiVersion": 1,
-        "fileHash": "sha256-0c8107ed640bfbf7c7802a41d5331032698f73c298f5c93bdad51b05de2a4afc"
+        "fileHash": "sha256-7f5ef931b516c1b0df76ef9967fef9045513958bf7dd35bbea2d41c3b049dfc9"
     },
     {
         "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/FreeSidePlus.cs3",
