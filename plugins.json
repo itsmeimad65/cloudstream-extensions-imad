@@ -39,25 +39,5 @@
         "iconUrl": "https://rentry.org/favicon.ico",
         "apiVersion": 1,
         "fileHash": "sha256-3f0f6fbf3f7049ea9851b2fb582b964dcabf8e08594909197b38ba9d12be1f73"
-    },
-    {
-        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/Reddxxx.cs3",
-        "status": 1,
-        "version": 14,
-        "name": "Reddxxx",
-        "internalName": "Reddxxx",
-        "authors": [
-            "imad"
-        ],
-        "description": "Browse millions of NSFW pics, gifs, and videos from Reddit",
-        "fileSize": 23770,
-        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
-        "language": "en",
-        "tvTypes": [
-            "NSFW"
-        ],
-        "iconUrl": "https://www.google.com/s2/favicons?domain=reddxxx.com&sz=32",
-        "apiVersion": 1,
-        "fileHash": "sha256-c36476bf89b15e30a213328a3ee7cd886daee7603c0429d0a9b70303e8c95bea"
     }
 ]
