@@ -1,45 +1,5 @@
 [
     {
-        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/Archivebate.cs3",
-        "status": 1,
-        "version": 16,
-        "name": "Archivebate",
-        "internalName": "Archivebate",
-        "authors": [
-            "imad"
-        ],
-        "description": "Browse and watch archived webcam videos from Archivebate",
-        "fileSize": 26999,
-        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
-        "language": "en",
-        "tvTypes": [
-            "NSFW"
-        ],
-        "iconUrl": "https://archivebate.com/logo/app.ico",
-        "apiVersion": 1,
-        "fileHash": "sha256-7224a1cdff609f1a39a47b6123db33f03c9c4fd4b895d8bfe52d4dd4d04636fb"
-    },
-    {
-        "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/eCamRips.cs3",
-        "status": 1,
-        "version": 1,
-        "name": "eCamRips",
-        "internalName": "eCamRips",
-        "authors": [
-            "imad"
-        ],
-        "description": "Browse and watch cam rip videos from eCamRips",
-        "fileSize": 12086,
-        "repositoryUrl": "https://github.com/itsmeimad65/cloudstream-extensions-imad",
-        "language": "en",
-        "tvTypes": [
-            "NSFW"
-        ],
-        "iconUrl": "https://www.ecamrips.com/favicon.ico",
-        "apiVersion": 1,
-        "fileHash": "sha256-5b4f91e9ad64eb18e19fe2bfdc47f0c1613f6aba2829db5485e20227a050bf17"
-    },
-    {
         "url": "https://raw.githubusercontent.com/itsmeimad65/cloudstream-extensions-imad/builds/FreeSidePlus.cs3",
         "status": 1,
         "version": 1,
